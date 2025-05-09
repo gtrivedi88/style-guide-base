@@ -1,0 +1,5 @@
+transformers
+gradio
+python-docx
+pdfplumber
+markdown
