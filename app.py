@@ -14,30 +14,35 @@ pipe = pipeline(
     tokenizer="gtrivedi/style-guide-base"
 )
 
+# Safe read function that handles both bytes and strings
+def safe_read(file):
+    data = file.read()
+    return data.decode() if isinstance(data, bytes) else data
+
 # Extract text from supported formats
 def extract_text(file):
     ext = os.path.splitext(file.name)[-1].lower()
 
     if ext == '.txt':
-        return file.read().decode()
+        return safe_read(file)
 
     elif ext == '.docx':
         doc = docx.Document(file)
-        return '\n'.join([p.text for p in doc.paragraphs])
+        return '\n'.join(p.text for p in doc.paragraphs)
 
     elif ext == '.pdf':
         with pdfplumber.open(file) as pdf:
             return '\n'.join(page.extract_text() for page in pdf.pages if page.extract_text())
 
     elif ext == '.md':
-        text = file.read().decode()
+        text = safe_read(file)
         return re.sub('<[^<]+?>', '', markdown.markdown(text))
 
     elif ext == '.adoc':
-        return file.read().decode()
+        return safe_read(file)
 
     elif ext == '.dita':
-        content = file.read().decode()
+        content = safe_read(file)
         try:
             root = ET.fromstring(content)
             paragraphs = [elem.text.strip() for elem in root.iter() if elem.tag.endswith('p') and elem.text]
@@ -75,7 +80,7 @@ ui = gr.Interface(
     fn=process_file,
     inputs=gr.File(label="Upload .txt, .docx, .pdf, .md, .adoc, .dita file"),
     outputs="text",
-    title="AI model to enforce IBM Style Guide ",
+    title="AI model to enforce IBM Style Guide",
     description="Detects and rewrites passive voice in uploaded files using a custom-trained AI model."
 )
 
