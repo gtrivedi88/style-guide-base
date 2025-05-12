@@ -6,7 +6,6 @@ import re
 import gradio as gr
 import xml.etree.ElementTree as ET
 from transformers import pipeline
-from gradio.components import NamedString  # needed to safely handle text files
 
 # Load the Hugging Face model (trained on passive voice correction)
 pipe = pipeline(
@@ -15,9 +14,10 @@ pipe = pipeline(
     tokenizer="gtrivedi/style-guide-base"
 )
 
-# Safe read function that handles both NamedString and binary file objects
+# Safe read function to handle both file-like and text-based uploads (like .md or .adoc)
 def safe_read(file):
-    if isinstance(file, NamedString):
+    # If file is a NamedString-like object (from Gradio), it has a .value attribute
+    if hasattr(file, "value"):
         return file.value
     data = file.read()
     return data.decode() if isinstance(data, bytes) else data
