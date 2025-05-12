@@ -6,6 +6,7 @@ import re
 import gradio as gr
 import xml.etree.ElementTree as ET
 from transformers import pipeline
+from gradio.components import NamedString  # needed to safely handle text files
 
 # Load the Hugging Face model (trained on passive voice correction)
 pipe = pipeline(
@@ -14,8 +15,10 @@ pipe = pipeline(
     tokenizer="gtrivedi/style-guide-base"
 )
 
-# Safe read function that handles both bytes and strings
+# Safe read function that handles both NamedString and binary file objects
 def safe_read(file):
+    if isinstance(file, NamedString):
+        return file.value
     data = file.read()
     return data.decode() if isinstance(data, bytes) else data
 
@@ -78,10 +81,10 @@ def process_file(file):
 # Gradio UI
 ui = gr.Interface(
     fn=process_file,
-    inputs=gr.File(label="Upload .txt, .docx, .pdf, .md, .adoc, .dita file"),
+    inputs=gr.File(label="Upload .md or .adoc file", file_types=[".md", ".adoc"]),
     outputs="text",
     title="AI model to enforce IBM Style Guide",
-    description="Detects and rewrites passive voice in uploaded files using a custom-trained AI model."
+    description="Detects and rewrites passive voice in uploaded .md or .adoc files using a custom-trained AI model."
 )
 
 ui.launch()
